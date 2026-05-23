@@ -5,6 +5,7 @@
 
 from flask import Flask, request, jsonify, render_template, session
 from flask_cors import CORS
+from dotenv import load_dotenv
 from supabase import create_client, Client
 import google.generativeai as genai
 import os
