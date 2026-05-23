@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MacroLens — Dashboard</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+
+<!-- PROFILE SETUP MODAL -->
+<div class="modal-overlay" id="profileModal" style="display:none">
+    <div class="modal">
+        <h2>Set up your profile 💪</h2>
+        <p>We need a few details to calculate your daily calorie target</p>
+
+        <div class="modal-row">
+            <div class="modal-input-group">
+                <label>Age</label>
+                <input type="number" id="profileAge" placeholder="22">
+            </div>
+            <div class="modal-input-group">
+                <label>Gender</label>
+                <select id="profileGender">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- HEIGHT WITH CM / FT TOGGLE -->
+        <div class="modal-input-group">
+            <label>Height</label>
+            <div class="unit-toggle">
+                <div class="unit-btn active" id="unitCm" onclick="switchHeightUnit('cm')">cm</div>
+                <div class="unit-btn" id="unitFt" onclick="switchHeightUnit('ft')">ft / in</div>
+            </div>
+            <input type="number" id="profileHeightCm" placeholder="175">
+            <div id="profileHeightFt" style="display:none">
+                <div class="feet-row">
+                    <input type="number" id="profileFeet" placeholder="5" min="3" max="8">
+                    <input type="number" id="profileInches" placeholder="9" min="0" max="11">
+                </div>
+                <div class="feet-labels">
+                    <span>feet</span>
+                    <span>inches</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-input-group">
+            <label>Weight (kg)</label>
+            <input type="number" id="profileWeight" placeholder="70">
+        </div>
+
+        <div class="modal-input-group">
+            <label>Your Goal</label>
+            <div class="goal-options">
+                <div class="goal-btn" onclick="selectGoal('cut', this)">
+                    <span class="goal-icon">🔥</span>Lose Fat
+                </div>
+                <div class="goal-btn" onclick="selectGoal('maintain', this)">
+                    <span class="goal-icon">⚖️</span>Maintain
+                </div>
+                <div class="goal-btn" onclick="selectGoal('bulk', this)">
+                    <span class="goal-icon">💪</span>Build Muscle
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-save-profile" onclick="saveProfile()">Save & Continue</button>
+    </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="navbar-logo">MacroLens</div>
+    <div class="navbar-right">
+        <span class="navbar-user" id="navUsername"></span>
+        <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+</nav>
+
+<!-- MAIN DASHBOARD -->
+<div class="main">
+
+    <!-- DAILY SUMMARY -->
+    <div class="card summary-card">
+        <div class="calories-main">
+            <div class="calories-number" id="caloriesLeft">--</div>
+            <div class="calories-label">calories remaining</div>
+            <div class="calories-sub" id="caloriesSub">of -- daily target</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="caloriesProgress" style="width:0%"></div>
+            </div>
+        </div>
+        <div class="macro-stat">
+            <div class="value protein-color" id="proteinLeft">--g</div>
+            <div class="label">Protein</div>
+            <div class="remaining" id="proteinSub">-- remaining</div>
+        </div>
+        <div class="macro-stat">
+            <div class="value carbs-color" id="carbsLeft">--g</div>
+            <div class="label">Carbs</div>
+            <div class="remaining" id="carbsSub">-- remaining</div>
+        </div>
+        <div class="macro-stat">
+            <div class="value fat-color" id="fatLeft">--g</div>
+            <div class="label">Fat</div>
+            <div class="remaining" id="fatSub">-- remaining</div>
+        </div>
+    </div>
+
+    <!-- FOOD SCANNER -->
+    <div class="card scanner-card">
+        <div class="card-title">📸 Scan Food</div>
+        <div class="upload-area" id="uploadArea"
+             onclick="document.getElementById('foodImage').click()">
+            <img id="previewImage" alt="Food preview">
+            <div class="upload-placeholder" id="uploadPlaceholder">
+                <div class="upload-icon">🍽️</div>
+                <div class="upload-text">Tap to take photo or upload</div>
+                <div class="upload-subtext">
+                    Works with any food including Pakistani dishes
+                </div>
+            </div>
+        </div>
+
+        <input type="file" id="foodImage" accept="image/*" capture="environment"
+               onchange="imageSelected(this)">
+
+        <div class="portion-selector" id="portionSelector">
+            <div class="portion-label">How much did you eat?</div>
+            <div class="portion-options">
+                <div class="portion-btn" onclick="selectPortion(0.6, this)">
+                    🥄 Small portion
+                </div>
+                <div class="portion-btn" onclick="selectPortion(1.0, this)">
+                    🍽️ Medium portion
+                </div>
+                <div class="portion-btn selected" onclick="selectPortion(1.5, this)">
+                    🍛 Large portion
+                </div>
+                <div class="portion-btn" onclick="selectPortion(2.0, this)">
+                    🫕 Extra large
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-scan" id="scanBtn" onclick="scanFood()">
+            Scan Food
+        </button>
+
+        <div class="scan-result" id="scanResult">
+            <div class="result-dish" id="resultDish"></div>
+            <div class="result-original" id="resultOriginal"></div>
+            <div class="result-macros">
+                <div class="result-macro">
+                    <div class="val" id="resultCalories" style="color:#00d4aa"></div>
+                    <div class="lbl">Calories</div>
+                </div>
+                <div class="result-macro">
+                    <div class="val" id="resultProtein" style="color:#00d4aa"></div>
+                    <div class="lbl">Protein</div>
+                </div>
+                <div class="result-macro">
+                    <div class="val" id="resultCarbs" style="color:#7b2ff7"></div>
+                    <div class="lbl">Carbs</div>
+                </div>
+                <div class="result-macro">
+                    <div class="val" id="resultFat" style="color:#ff6b6b"></div>
+                    <div class="lbl">Fat</div>
+                </div>
+            </div>
+
+            <!-- INGREDIENT BREAKDOWN -->
+            <div id="ingredientsSection" style="margin-top:14px; display:none">
+                <div style="font-size:12px; color:rgba(255,255,255,0.4);
+                            text-transform:uppercase; letter-spacing:1px;
+                            margin-bottom:10px;">🧾 Ingredients</div>
+                <div id="ingredientsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TODAY'S DIARY -->
+    <div class="card diary-card">
+        <div class="card-title">📋 Today's Diary</div>
+        <div id="diaryList">
+            <div class="empty-diary">
+                <div class="icon">🍽️</div>
+                <div>No meals logged yet today</div>
+                <div style="font-size:12px; margin-top:6px">
+                    Scan your first meal to get started
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI CHATBOT -->
+    <div class="card chat-card">
+        <div class="card-title">🤖 AI Nutrition Coach</div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-bubble bot">
+                <div class="bubble-text">
+                    Hey! I'm your personal nutrition coach. I can see your daily
+                    targets and what you've eaten today. Ask me anything — meal
+                    suggestions, macro advice, or anything diet related! 💪
+                </div>
+            </div>
+        </div>
+        <div class="chat-input-row">
+            <input type="text" class="chat-input" id="chatInput"
+                   placeholder="Ask me anything about your diet..."
+                   onkeypress="if(event.key==='Enter') sendMessage()">
+            <button class="btn-send" onclick="sendMessage()" id="sendBtn">Send</button>
+        </div>
+    </div>
+
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+</body>
+</html>
