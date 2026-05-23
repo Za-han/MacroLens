@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MacroLens — Login</title>
+    <style>
+        /* ---- GLOBAL RESET ---- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* ---- BACKGROUND ---- */
+        /* Dark gradient background — looks clean on mobile and desktop */
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* ---- MAIN CARD ---- */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        /* ---- LOGO ---- */
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo h1 {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #00d4aa, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo p {
+            color: rgba(255,255,255,0.4);
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        /* ---- TABS (Login / Sign Up) ---- */
+        .tabs {
+            display: flex;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 28px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            color: rgba(255,255,255,0.4);
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: linear-gradient(90deg, #00d4aa, #7b2ff7);
+            color: white;
+        }
+
+        /* ---- FORMS ---- */
+        .form { display: none; }
+        .form.active { display: block; }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            color: rgba(255,255,255,0.6);
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: #00d4aa;
+        }
+
+        /* ---- BUTTON ---- */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, #00d4aa, #7b2ff7);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: opacity 0.3s;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ---- MESSAGE ---- */
+        /* Shows success or error messages below the button */
+        .message {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        .message.success { color: #00d4aa; }
+        .message.error { color: #ff6b6b; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <!-- LOGO -->
+    <div class="logo">
+        <h1>MacroLens</h1>
+        <p>AI-powered nutrition tracking</p>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('login')">Login</div>
+        <div class="tab" onclick="switchTab('signup')">Sign Up</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="form active" id="loginForm">
+        <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="loginEmail" placeholder="you@email.com">
+        </div>
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="loginPassword" placeholder="••••••••">
+        </div>
+        <button class="btn" onclick="login()">Login</button>
+        <div class="message" id="loginMessage"></div>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div class="form" id="signupForm">
+        <div class="input-group">
+            <label>Full Name</label>
+            <input type="text" id="signupName" placeholder="Zahan Ahmed Khan">
+        </div>
+        <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="signupEmail" placeholder="you@email.com">
+        </div>
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="signupPassword" placeholder="••••••••">
+        </div>
+        <button class="btn" onclick="signup()">Create Account</button>
+        <div class="message" id="signupMessage"></div>
+    </div>
+</div>
+
+<script>
+    // ---- SWITCH BETWEEN LOGIN AND SIGNUP TABS ----
+    function switchTab(tab) {
+        // Update tab styling
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.form').forEach(f => f.classList.remove('active'));
+
+        // Activate the selected tab
+        if (tab === 'login') {
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('loginForm').classList.add('active');
+        } else {
+            document.querySelectorAll('.tab')[1].classList.add('active');
+            document.getElementById('signupForm').classList.add('active');
+        }
+    }
+
+    // ---- LOGIN FUNCTION ----
+    async function login() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const message = document.getElementById('loginMessage');
+        const btn = event.target;
+
+        // Basic validation
+        if (!email || !password) {
+            showMessage(message, 'Please fill in all fields', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Logging in...';
+
+        try {
+            // Send login request to Flask backend
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage(message, 'Welcome back! Redirecting...', 'success');
+                // Redirect to dashboard after short delay
+                setTimeout(() => window.location.href = '/dashboard', 1000);
+            } else {
+                showMessage(message, data.message || 'Login failed', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Login';
+            }
+        } catch (err) {
+            showMessage(message, 'Connection error. Try again.', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Login';
+        }
+    }
+
+    // ---- SIGNUP FUNCTION ----
+    async function signup() {
+        const name = document.getElementById('signupName').value;
+        const email = document.getElementById('signupEmail').value;
+        const password = document.getElementById('signupPassword').value;
+        const message = document.getElementById('signupMessage');
+        const btn = event.target;
+
+        if (!name || !email || !password) {
+            showMessage(message, 'Please fill in all fields', 'error');
+            return;
+        }
+
+        if (password.length < 6) {
+            showMessage(message, 'Password must be at least 6 characters', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Creating account...';
+
+        try {
+            const response = await fetch('/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showMessage(message, 'Account created! Please login.', 'success');
+                setTimeout(() => switchTab('login'), 1500);
+            } else {
+                showMessage(message, data.message || 'Signup failed', 'error');
+            }
+        } catch (err) {
+            showMessage(message, 'Connection error. Try again.', 'error');
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+    }
+
+    // ---- SHOW MESSAGE HELPER ----
+    function showMessage(element, text, type) {
+        element.textContent = text;
+        element.className = 'message ' + type;
+    }
+
+    // ---- ALLOW ENTER KEY TO SUBMIT ----
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const activeForm = document.querySelector('.form.active').id;
+            if (activeForm === 'loginForm') login();
+            else signup();
+        }
+    });
+</script>
+
+</body>
+</html>
