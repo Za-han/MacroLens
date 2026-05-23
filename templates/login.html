@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MacroLens — Login</title>
     <style>
-        /* ---- GLOBAL RESET ---- */
         * {
             margin: 0;
             padding: 0;
@@ -13,8 +12,6 @@
             font-family: 'Segoe UI', sans-serif;
         }
 
-        /* ---- BACKGROUND ---- */
-        /* Dark gradient background — looks clean on mobile and desktop */
         body {
             min-height: 100vh;
             background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
@@ -24,7 +21,6 @@
             padding: 20px;
         }
 
-        /* ---- MAIN CARD ---- */
         .card {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
@@ -35,7 +31,6 @@
             max-width: 420px;
         }
 
-        /* ---- LOGO ---- */
         .logo {
             text-align: center;
             margin-bottom: 32px;
@@ -56,7 +51,6 @@
             margin-top: 6px;
         }
 
-        /* ---- TABS (Login / Sign Up) ---- */
         .tabs {
             display: flex;
             background: rgba(255,255,255,0.05);
@@ -82,7 +76,6 @@
             color: white;
         }
 
-        /* ---- FORMS ---- */
         .form { display: none; }
         .form.active { display: block; }
 
@@ -97,6 +90,53 @@
             margin-bottom: 6px;
         }
 
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 14px 46px 14px 16px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .input-wrapper input:focus {
+            border-color: #00d4aa;
+        }
+
+        .eye-icon {
+            position: absolute;
+            right: 14px;
+            cursor: pointer;
+            opacity: 0.35;
+            transition: opacity 0.2s;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .eye-icon:hover { opacity: 0.85; }
+
+        .eye-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Regular inputs without eye icon */
         .input-group input {
             width: 100%;
             padding: 14px 16px;
@@ -113,7 +153,6 @@
             border-color: #00d4aa;
         }
 
-        /* ---- BUTTON ---- */
         .btn {
             width: 100%;
             padding: 14px;
@@ -131,8 +170,6 @@
         .btn:hover { opacity: 0.9; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* ---- MESSAGE ---- */
-        /* Shows success or error messages below the button */
         .message {
             text-align: center;
             margin-top: 16px;
@@ -147,13 +184,11 @@
 <body>
 
 <div class="card">
-    <!-- LOGO -->
     <div class="logo">
         <h1>MacroLens</h1>
         <p>AI-powered nutrition tracking</p>
     </div>
 
-    <!-- TABS -->
     <div class="tabs">
         <div class="tab active" onclick="switchTab('login')">Login</div>
         <div class="tab" onclick="switchTab('signup')">Sign Up</div>
@@ -167,7 +202,19 @@
         </div>
         <div class="input-group">
             <label>Password</label>
-            <input type="password" id="loginPassword" placeholder="••••••••">
+            <div class="input-wrapper">
+                <input type="password" id="loginPassword" placeholder="••••••••">
+                <span class="eye-icon" onclick="togglePassword('loginPassword', this)">
+                    <svg viewBox="0 0 24 24" class="eye-open">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg viewBox="0 0 24 24" class="eye-closed" style="display:none">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                </span>
+            </div>
         </div>
         <button class="btn" onclick="login()">Login</button>
         <div class="message" id="loginMessage"></div>
@@ -185,7 +232,19 @@
         </div>
         <div class="input-group">
             <label>Password</label>
-            <input type="password" id="signupPassword" placeholder="••••••••">
+            <div class="input-wrapper">
+                <input type="password" id="signupPassword" placeholder="••••••••">
+                <span class="eye-icon" onclick="togglePassword('signupPassword', this)">
+                    <svg viewBox="0 0 24 24" class="eye-open">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg viewBox="0 0 24 24" class="eye-closed" style="display:none">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                </span>
+            </div>
         </div>
         <button class="btn" onclick="signup()">Create Account</button>
         <div class="message" id="signupMessage"></div>
@@ -193,13 +252,9 @@
 </div>
 
 <script>
-    // ---- SWITCH BETWEEN LOGIN AND SIGNUP TABS ----
     function switchTab(tab) {
-        // Update tab styling
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.form').forEach(f => f.classList.remove('active'));
-
-        // Activate the selected tab
         if (tab === 'login') {
             document.querySelectorAll('.tab')[0].classList.add('active');
             document.getElementById('loginForm').classList.add('active');
@@ -209,14 +264,29 @@
         }
     }
 
-    // ---- LOGIN FUNCTION ----
+    function togglePassword(inputId, icon) {
+        const input = document.getElementById(inputId);
+        const eyeOpen = icon.querySelector('.eye-open');
+        const eyeClosed = icon.querySelector('.eye-closed');
+        if (input.type === 'password') {
+            input.type = 'text';
+            eyeOpen.style.display = 'none';
+            eyeClosed.style.display = 'block';
+            icon.style.opacity = '0.9';
+        } else {
+            input.type = 'password';
+            eyeOpen.style.display = 'block';
+            eyeClosed.style.display = 'none';
+            icon.style.opacity = '0.35';
+        }
+    }
+
     async function login() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
         const message = document.getElementById('loginMessage');
         const btn = event.target;
 
-        // Basic validation
         if (!email || !password) {
             showMessage(message, 'Please fill in all fields', 'error');
             return;
@@ -226,18 +296,14 @@
         btn.textContent = 'Logging in...';
 
         try {
-            // Send login request to Flask backend
             const response = await fetch('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
-
             const data = await response.json();
-
             if (data.success) {
                 showMessage(message, 'Welcome back! Redirecting...', 'success');
-                // Redirect to dashboard after short delay
                 setTimeout(() => window.location.href = '/dashboard', 1000);
             } else {
                 showMessage(message, data.message || 'Login failed', 'error');
@@ -251,7 +317,6 @@
         }
     }
 
-    // ---- SIGNUP FUNCTION ----
     async function signup() {
         const name = document.getElementById('signupName').value;
         const email = document.getElementById('signupEmail').value;
@@ -278,9 +343,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, email, password })
             });
-
             const data = await response.json();
-
             if (data.success) {
                 showMessage(message, 'Account created! Please login.', 'success');
                 setTimeout(() => switchTab('login'), 1500);
@@ -295,13 +358,11 @@
         btn.textContent = 'Create Account';
     }
 
-    // ---- SHOW MESSAGE HELPER ----
     function showMessage(element, text, type) {
         element.textContent = text;
         element.className = 'message ' + type;
     }
 
-    // ---- ALLOW ENTER KEY TO SUBMIT ----
     document.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             const activeForm = document.querySelector('.form.active').id;
