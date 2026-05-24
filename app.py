@@ -1,72 +1,61 @@
 # ============================================================
 # app.py — The brain of MacroLens
-# This is the Flask server that runs everything
 # ============================================================
 
 from flask import Flask, request, jsonify, render_template, session
 from flask_cors import CORS
 from dotenv import load_dotenv
 from supabase import create_client, Client
-import google.generativeai as genai
+from datetime import timedelta
 import os
 import base64
+import json
 
 # ---- LOAD ENVIRONMENT VARIABLES ----
-# This reads your .env file and makes all your keys available
-# Without this line, the app has no idea where your API keys are
-load_dotenv()
+load_dotenv()       # Loads the safe API Keys stored in .env
 
 # ---- INITIALIZE FLASK ----
-# This creates your web app
-# __name__ tells Flask where to find your templates and static files
 app = Flask(__name__)
-
-# This is needed for login sessions - It encrypts the session cookie
-# Change this to any random string you want
 app.secret_key = "macrolens_zahan_2025_xk92"
 
-# ---- ENABLE CORS ----
-# Allows your frontend HTML pages to talk to this Flask backend
-# Without this the browser blocks all requests as a security measure
-CORS(app)
+# Keeps user logged in for 30 days without asking to login again
+app.permanent_session_lifetime = timedelta(days=30)
 
+# ---- ENABLE CORS ----
+CORS(app)          # It is used to create a safe session between frontend and backend
 
 # ---- CONNECT TO SUPABASE ----
-# Reads your URL and key from .env and creates a connection
 supabase: Client = create_client(
     os.getenv("SUPABASE_URL"),
     os.getenv("SUPABASE_ANON_KEY")
 )
 
 # ---- CONNECT TO GEMINI AI ----
-# Reads your Gemini key from .env and sets it up
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-# We use gemini-1.5-flash becuase it supports image scanning and is fee tier
-model = genai.GenerativeModel("gemini-1.5-flash")
+from google import genai
+from google.genai import types
+
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # ============================================================
-# ROUTES — These are the pages and endpoints of your app
-# Think of routes like doors into your app
-# Each @app.route defines what happens when someone visits that URL
+# ROUTES
 # ============================================================
 
 # ---- HOME PAGE ----
-# When someone visits http://localhost:5000 they see the login page
 @app.route("/")
 def home():
-   return render_template("login.html")
+    # If already logged in, skip login page and go straight to dashboard
+    if "user_id" in session:
+        return render_template("dashboard.html")
+    return render_template("login.html")
 
 # ---- DASHBOARD ----
-# Only accessible after logging in
 @app.route("/dashboard")
 def dashboard():
-    # Check if user is logged in — if not send them back to login
     if "user_id" not in session:
         return render_template("login.html")
     return render_template("dashboard.html")
 
 # ---- SIGNUP ----
-# Handles new user registration
 @app.route("/signup", methods=["POST"])
 def signup():
     data = request.get_json()
@@ -75,7 +64,6 @@ def signup():
     name = data.get("name")
 
     try:
-        # Create user in Supabase Auth
         response = supabase.auth.sign_up({
             "email": email,
             "password": password
@@ -83,7 +71,6 @@ def signup():
 
         user_id = response.user.id
 
-        # Save extra profile info in our profiles table
         supabase.table("profiles").insert({
             "id": user_id,
             "name": name,
@@ -107,7 +94,8 @@ def login():
             "password": password
         })
 
-        # Store user info in session so we know they're logged in
+        # Make session permanent so user stays logged in for 30 days
+        session.permanent = True
         session["user_id"] = response.user.id
         session["email"] = response.user.email
 
@@ -122,29 +110,31 @@ def logout():
     return render_template("login.html")
 
 # ---- SAVE PROFILE ----
-# Saves user's height, weight, age, goal after they set up their profile
 @app.route("/save_profile", methods=["POST"])
 def save_profile():
     if "user_id" not in session:
         return jsonify({"success": False, "message": "Not logged in"})
 
     data = request.get_json()
+    print("Saving profile for user:", session["user_id"])
+    print("Data received:", data)
 
     try:
         supabase.table("profiles").update({
             "height_cm": data.get("height"),
             "weight_kg": data.get("weight"),
             "age": data.get("age"),
-            "goal": data.get("goal"),  # 'cut', 'maintain', or 'bulk'
+            "goal": data.get("goal"),
             "gender": data.get("gender")
         }).eq("id", session["user_id"]).execute()
 
+        print("Profile saved successfully")
         return jsonify({"success": True})
     except Exception as e:
+        print("Error saving profile:", e)
         return jsonify({"success": False, "message": str(e)})
 
 # ---- GET PROFILE ----
-# Returns user's profile data to display on dashboard
 @app.route("/get_profile")
 def get_profile():
     if "user_id" not in session:
@@ -156,8 +146,6 @@ def get_profile():
         ).execute()
 
         profile = response.data[0] if response.data else {}
-
-        # Calculate daily calorie target based on profile
         calories = calculate_calories(profile)
         profile["daily_calories"] = calories
 
@@ -166,8 +154,7 @@ def get_profile():
         return jsonify({"success": False, "message": str(e)})
 
 # ---- CALORIE CALCULATOR ----
-# Uses the Mifflin-St Jeor formula — the most accurate calorie formula
-# This is what dietitians and fitness apps actually use
+# Mifflin-St Jeor formula — used by dietitians worldwide
 def calculate_calories(profile):
     try:
         weight = float(profile.get("weight_kg", 70))
@@ -176,58 +163,46 @@ def calculate_calories(profile):
         gender = profile.get("gender", "male")
         goal = profile.get("goal", "maintain")
 
-        # Mifflin-St Jeor Formula
         if gender == "male":
             bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5
         else:
             bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161
 
-        # Multiply by activity factor (we assume moderate activity)
         tdee = bmr * 1.55
 
-        # Adjust based on goal
         if goal == "cut":
-            return round(tdee - 500)   # 500 calorie deficit to lose fat
+            return round(tdee - 500)
         elif goal == "bulk":
-            return round(tdee + 300)   # 300 calorie surplus to gain muscle
+            return round(tdee + 300)
         else:
-            return round(tdee)         # Maintenance
-
+            return round(tdee)
     except:
-        return 2000  # Default fallback
+        return 2000
 
 # ---- SCAN FOOD ----
-# The star feature — takes a photo and returns calories + macros
 @app.route("/scan_food", methods=["POST"])
 def scan_food():
     if "user_id" not in session:
         return jsonify({"success": False, "message": "Not logged in"})
 
     try:
-        # Get the image from the request
         file = request.files.get("image")
         image_data = file.read()
 
-        # Convert image to base64 so Gemini can read it
-        image_base64 = base64.b64encode(image_data).decode("utf-8")
-
-        # Ask Gemini to analyze the food
-        # This prompt is carefully written to get structured data back
         prompt = """
-        Analyze this food image and provide nutritional information.
-        This may include South Asian / Pakistani dishes like biryani, daal, 
+        Analyze this food image and provide detailed nutritional information.
+        This may include South Asian / Pakistani dishes like biryani, daal,
         karahi, roti, nihari, halwa puri, samosa, or any other dish.
-        
-        Identify the dish name and provide:
-        - Dish name (in English and original name if applicable)
-        - Estimated serving size
-        - Calories
-        - Protein (grams)
-        - Carbohydrates (grams)
-        - Fat (grams)
-        - Fiber (grams)
-        
-        Respond in this exact JSON format:
+        It may also include branded/packaged foods, fast food, or any cuisine.
+
+        Provide:
+        1. The dish name in English
+        2. The original name if it's a non-English dish
+        3. Estimated serving size
+        4. Total nutrition for the serving
+        5. A breakdown of the main ingredients with their individual calories
+
+        Respond in this EXACT JSON format, nothing else:
         {
             "dish_name": "...",
             "original_name": "...",
@@ -236,22 +211,36 @@ def scan_food():
             "protein": 00,
             "carbs": 00,
             "fat": 00,
-            "fiber": 0
+            "fiber": 0,
+            "ingredients": [
+                {"name": "...", "calories": 00, "protein": 0, "carbs": 0, "fat": 0},
+                {"name": "...", "calories": 00, "protein": 0, "carbs": 0, "fat": 0},
+                {"name": "...", "calories": 00, "protein": 0, "carbs": 0, "fat": 0}
+            ]
         }
-        Only respond with the JSON, nothing else.
+        Only respond with the JSON, nothing else, no markdown, no code blocks.
         """
 
-        # Send image + prompt to Gemini
-        response = model.generate_content([
-            prompt,
-            {"mime_type": "image/jpeg", "data": image_base64}
-        ])
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=[
+                types.Part.from_text(text=prompt),
+                types.Part.from_bytes(
+                    data=image_data,
+                    mime_type="image/jpeg"
+                )
+            ]
+        )
 
-        # Parse the response
-        import json
-        nutrition = json.loads(response.text.strip())
+        # Strip markdown code blocks if Gemini wraps response
+        raw = response.text.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        nutrition = json.loads(raw.strip())
 
-        # Log this meal to the database
+        # Save meal to database
         supabase.table("meals").insert({
             "user_id": session["user_id"],
             "dish_name": nutrition["dish_name"],
@@ -259,17 +248,17 @@ def scan_food():
             "protein": nutrition["protein"],
             "carbs": nutrition["carbs"],
             "fat": nutrition["fat"],
-            "fiber": nutrition["fiber"],
+            "fiber": nutrition.get("fiber", 0),
             "serving_size": nutrition["serving_size"]
         }).execute()
 
         return jsonify({"success": True, "nutrition": nutrition})
 
     except Exception as e:
+        print("Scan error:", e)
         return jsonify({"success": False, "message": str(e)})
 
 # ---- GET TODAY'S MEALS ----
-# Returns all meals logged today for the logged in user
 @app.route("/get_todays_meals")
 def get_todays_meals():
     if "user_id" not in session:
@@ -302,11 +291,82 @@ def get_todays_meals():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
+# ---- AI DIET CHATBOT ----
+@app.route("/chat", methods=["POST"])
+def chat():
+    if "user_id" not in session:
+        return jsonify({"success": False})
+
+    data = request.get_json()
+    user_message = data.get("message")
+    calories_remaining = data.get("calories_remaining", 0)
+    calories_consumed = data.get("calories_consumed", 0)
+    daily_target = data.get("daily_target", 2000)
+    protein_consumed = data.get("protein_consumed", 0)
+    carbs_consumed = data.get("carbs_consumed", 0)
+    fat_consumed = data.get("fat_consumed", 0)
+
+    try:
+        prompt = f"""
+        You are a friendly personal nutrition coach inside the MacroLens app.
+
+        User's stats today:
+        - Daily calorie target: {daily_target} calories
+        - Calories consumed so far: {calories_consumed} calories
+        - Calories remaining: {calories_remaining} calories
+        - Protein consumed: {protein_consumed}g
+        - Carbs consumed: {carbs_consumed}g
+        - Fat consumed: {fat_consumed}g
+
+        Give short, practical, friendly advice.
+        You know about Pakistani and South Asian foods like biryani, daal,
+        karahi, roti, nihari, halwa puri, and more.
+        Keep responses under 3 sentences unless a meal plan is requested.
+
+        User: {user_message}
+        """
+
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
+
+        return jsonify({"success": True, "reply": response.text})
+
+    except Exception as e:
+        print("Chat error:", e)
+        return jsonify({"success": True,
+                        "reply": "Sorry, I'm having trouble right now. Try again!"})
+        
+# ---- SETTINGS PAGE ----
+@app.route("/settings")
+def settings():
+    if "user_id" not in session:
+        return render_template("login.html")
+    return render_template("settings.html")
+
+# ---- UPDATE PROFILE ----
+@app.route("/update_profile", methods=["POST"])
+def update_profile():
+    if "user_id" not in session:
+        return jsonify({"success": False, "message": "Not logged in"})
+
+    data = request.get_json()
+
+    try:
+        supabase.table("profiles").update({
+            "name": data.get("name"),
+            "height_cm": data.get("height"),
+            "weight_kg": data.get("weight"),
+            "age": data.get("age"),
+            "goal": data.get("goal"),
+            "gender": data.get("gender")
+        }).eq("id", session["user_id"]).execute()
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
+
 # ---- START THE APP ----
 if __name__ == "__main__":
-    # debug=True means the server auto-restarts when you save changes
-    # Great for development, turn off in production
     app.run(debug=True, port=5000)
-
-
-
