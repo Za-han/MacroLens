@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MacroLens — Settings</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/settings.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="navbar-logo">MacroLens</div>
+    <div class="navbar-right">
+        <a href="/dashboard" class="btn-logout">← Dashboard</a>
+        <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+</nav>
+
+<div class="settings-container">
+    <div class="settings-card">
+        <h2>Profile Settings ⚙️</h2>
+        <p>Update your details to recalculate your daily calorie target</p>
+
+        <div class="settings-row">
+            <div class="settings-input-group">
+                <label>Full Name</label>
+                <input type="text" id="settingsName" placeholder="Your name">
+            </div>
+            <div class="settings-input-group">
+                <label>Email</label>
+                <input type="email" id="settingsEmail" placeholder="your@email.com" disabled>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-input-group">
+                <label>Age</label>
+                <input type="number" id="settingsAge" placeholder="22">
+            </div>
+            <div class="settings-input-group">
+                <label>Gender</label>
+                <select id="settingsGender">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- HEIGHT WITH TOGGLE -->
+        <div class="settings-input-group">
+            <label>Height</label>
+            <div class="unit-toggle">
+                <div class="unit-btn active" id="unitCm" onclick="switchHeightUnit('cm')">cm</div>
+                <div class="unit-btn" id="unitFt" onclick="switchHeightUnit('ft')">ft / in</div>
+            </div>
+            <input type="number" id="settingsHeightCm" placeholder="175">
+            <div id="settingsHeightFt" style="display:none">
+                <div class="feet-row">
+                    <input type="number" id="settingsFeet" placeholder="5" min="3" max="8">
+                    <input type="number" id="settingsInches" placeholder="9" min="0" max="11">
+                </div>
+                <div class="feet-labels">
+                    <span>feet</span>
+                    <span>inches</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-input-group">
+                <label>Weight (kg)</label>
+                <input type="number" id="settingsWeight" placeholder="70">
+            </div>
+            <div class="settings-input-group">
+                <label>Your Goal</label>
+                <select id="settingsGoal">
+                    <option value="cut">🔥 Lose Fat</option>
+                    <option value="maintain">⚖️ Maintain</option>
+                    <option value="bulk">💪 Build Muscle</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- CALORIE PREVIEW -->
+        <div class="calorie-preview" id="caloriePreview">
+            <div class="preview-label">Your daily calorie target</div>
+            <div class="preview-number" id="previewCalories">--</div>
+            <div class="preview-sub">calories per day</div>
+        </div>
+
+        <button class="btn-save" onclick="saveSettings()" id="saveBtn">
+            Save Changes
+        </button>
+
+        <div class="save-message" id="saveMessage"></div>
+    </div>
+</div>
+
+<script src="/static/js/settings.js"></script>
+</body>
+</html>
