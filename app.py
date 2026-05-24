@@ -17,6 +17,7 @@ load_dotenv()       # Loads the safe API Keys stored in .env
 # ---- INITIALIZE FLASK ----
 app = Flask(__name__)
 app.secret_key = "macrolens_zahan_2025_xk92"
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 # Keeps user logged in for 30 days without asking to login again
 app.permanent_session_lifetime = timedelta(days=30)
